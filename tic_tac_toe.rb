@@ -3,13 +3,13 @@ class TicTacToe
   def initialize()
     @winners = [Set[1,2,3],Set[1,4,7],Set[1,5,9],Set[2,5,8],Set[3,5,7],Set[3,6,9],Set[4,5,6],Set[7,8,9]]
     @board = ['1','2','3','4','5','6','7','8','9']
-    @corner_cells = ['1','3','7','9']
-    @edge_cells = ['2','4','6','8']
+    @corner_cells = ['1','3','9','7'] # the order here is important for opposite_corner
+    @edge_cells = ['2','4','8','6']
     @o = Set.new
     @x = Set.new
 
     print_board
-    print "X goes first\n"
+    print "X goes first, enter a cell number:\n"
     move(gets.chomp)
   end
 
@@ -38,9 +38,12 @@ class TicTacToe
     # TODO Option 1: The player should create two in a row to force the opponent into defending, as long as it doesn't result in them creating a fork. For example, if "X" has a corner, "O" has the center, and "X" has the opposite corner as well, "O" must not play a corner in order to win. (Playing a corner in this scenario creates a fork for "X" to win.)
     # TODO Option 2: If there is a configuration where the opponent can fork, the player should block that fork.
     # Center: A player marks the center. (If it is the first move of the game, playing on a corner gives "O" more opportunities to make a mistake and may therefore be the better choice; however, it makes no difference between perfect players.)
-    # TODO Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
+    # Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
     # Empty corner: The player plays in a corner square.
     # Empty side: The player plays in a middle square on any of the 4 sides.
+
+    # AI Algorithm
+
     # try to win
     cell = two_in_a_row(@o)
     # block winning move
@@ -53,11 +56,16 @@ class TicTacToe
     cell ||= take_free_corner
     # take an edge
     cell ||= take_free_edge
-    
+
     # Choose randomly:
     # a = @board.select{ |t| t.to_i > 0 && t.to_i < 10 }
     # m = rand(a.length-1)
     # pencil_in_o( a[m].to_i )
+  end
+
+  def fork( team )
+    # this method will return the cell required to create a fork for team or nil
+    nil
   end
 
   def two_in_a_row( team )
@@ -78,8 +86,8 @@ class TicTacToe
       if @x.include? c.to_i
         cell = opposite_corner(c)
         if @board.include? cell
-          pencil_in_o(cell)
-          return cell
+          pencil_in_o(cell.to_i)
+          return cell.to_i
         end
       end
     end
