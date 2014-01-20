@@ -1,14 +1,10 @@
 class TicTacToe
   require 'set'
   def initialize()
-    # these are the winning combinations
-    @winners = [[1,2,3],[1,4,7],[1,5,9],[2,5,8],[3,5,7],[3,6,9],[4,5,6],[7,8,9]]
-    @winners = @winners.map{ |w| w.to_set }
-    # @t is used to print out the current state of the board
-    @t = ['1','2','3','4','5','6','7','8','9']
+    @winners = [Set[1,2,3],Set[1,4,7],Set[1,5,9],Set[2,5,8],Set[3,5,7],Set[3,6,9],Set[4,5,6],Set[7,8,9]]
+    @board = ['1','2','3','4','5','6','7','8','9']
     @corner_cells = ['1','3','7','9']
-
-    # @o and @x are the cells with O's and X's
+    @edge_cells = ['2','4','6','8']
     @o = Set.new
     @x = Set.new
 
@@ -19,7 +15,7 @@ class TicTacToe
 
   def move( cell )
     # check if this is valid input and this cell is available
-    if @t.include? cell
+    if @board.include? cell
       pencil_in_x(cell.to_i) # also prints an announcement
       return if any_winners?( @x )
 
@@ -47,50 +43,53 @@ class TicTacToe
     # Empty side: The player plays in a middle square on any of the 4 sides.
     # try to win
     cell = two_in_a_row(@o)
-    return cell if cell
     # block winning move
-    cell = two_in_a_row(@x)
-    return cell if cell
+    cell ||= two_in_a_row(@x)
     # take the center
-    return pencil_in_o(5) if @t.include? '5'
+    cell ||= pencil_in_o(5) if @board.include? '5'
     # take opposite corner
-    cell = take_opposite_corner
-    return cell if cell
+    cell ||= take_opposite_corner
     # take any corner
-    cell = take_free_corner
-    return cell if cell
+    cell ||= take_free_corner
     # take an edge
-    return take_free_edge
+    cell ||= take_free_edge
+    
     # Choose randomly:
-    a = @t.select{ |t| t.to_i > 0 && t.to_i < 10 }
-    m = rand(a.length-1)
-    pencil_in_o( a[m].to_i )
+    # a = @board.select{ |t| t.to_i > 0 && t.to_i < 10 }
+    # m = rand(a.length-1)
+    # pencil_in_o( a[m].to_i )
   end
 
   def two_in_a_row( team )
     @winners.map do |w|
       if team.&(w).size > 1 # two in a row
         cell = w.-(team).first # the third
-        if @t.include? cell.to_s # check if the third is free
+        if @board.include? cell.to_s # check if the third is free
           pencil_in_o(cell)
           return cell
         end
       end
     end
-    return false
+    return nil
   end
 
   def take_opposite_corner
     @corner_cells.map do |c|
       if @x.include? c.to_i
-        
+        cell = opposite_corner(c)
+        if @board.include? cell
+          pencil_in_o(cell)
+          return cell
+        end
       end
     end
-    return false
+    return nil
   end
 
   def opposite_corner(c)
-    @corner_cells.find(c)
+    i = @corner_cells.index(c)
+    opp_index = i + 2 > 3 ? i - 2 : i + 2
+    @corner_cells[opp_index]
   end
 
   def take_free_corner
@@ -98,17 +97,17 @@ class TicTacToe
   end
   
   def take_free_edge
-    check_cells(['2','4','6','8'])
+    check_cells(@edge_cells)
   end
   
   def check_cells( a )
     a.map do |c|
-      if @t.include? c
+      if @board.include? c
         pencil_in_o(c.to_i)
         return c.to_i
       end
     end
-    return false
+    return nil
   end
 
   def any_winners?( team )
@@ -121,6 +120,7 @@ class TicTacToe
     end
     # if the board's full, tie
     if @x.length + @o.length >= 9
+      print_board
       p "Tie!"
       return true
     end
@@ -128,19 +128,19 @@ class TicTacToe
   end
 
   def pencil_in_o( cell )
-    @t[cell-1] = "O"
+    @board[cell-1] = "O"
     @o << cell
     cell
   end
 
   def pencil_in_x( cell )
-    @t[cell-1] = "X"
+    @board[cell-1] = "X"
     @x << cell
     p "X moves to #{cell}"
   end
 
   def print_board
-    print " #{[@t[0..2].join(" | "),@t[3..5].join(" | "),@t[6..8].join(" | ")].join(" \n---+---+---\n ")} \n"
+    print " #{[@board[0..2].join(" | "),@board[3..5].join(" | "),@board[6..8].join(" | ")].join(" \n---+---+---\n ")} \n"
   end
 end
 
