@@ -1,6 +1,6 @@
 class TicTacToe
   require 'set'
-  def initialize()
+  def initialize(computer_goes_first=false)
     @winners = [Set[1,2,3],Set[1,4,7],Set[1,5,9],Set[2,5,8],Set[3,5,7],Set[3,6,9],Set[4,5,6],Set[7,8,9]]
     @board = ['1','2','3','4','5','6','7','8','9']
     @corner_cells = ['1','3','9','7'] # the order here is important for opposite_corner
@@ -8,8 +8,9 @@ class TicTacToe
     @o = Set.new
     @x = Set.new
 
+    computer_move if computer_goes_first
     print_board
-    print "X goes first, enter a cell number:\n"
+    print "Your turn, enter a cell number:\n"
     move(gets.chomp)
   end
 
@@ -33,10 +34,10 @@ class TicTacToe
     # Wikipedia:
     # Win: If the player has two in a row, they can place a third to get three in a row.
     # Block: If the opponent has two in a row, the player must play the third themself to block the opponent.
-    # TODO Fork: Create an opportunity where the player has two threats to win (two non-blocked lines of 2).
+    # Fork: Create an opportunity where the player has two threats to win (two non-blocked lines of 2).
     # Blocking an opponent's fork:
-    # TODO Option 1: The player should create two in a row to force the opponent into defending, as long as it doesn't result in them creating a fork. For example, if "X" has a corner, "O" has the center, and "X" has the opposite corner as well, "O" must not play a corner in order to win. (Playing a corner in this scenario creates a fork for "X" to win.)
-    # TODO Option 2: If there is a configuration where the opponent can fork, the player should block that fork.
+    # Option 1: The player should create two in a row to force the opponent into defending, as long as it doesn't result in them creating a fork. For example, if "X" has a corner, "O" has the center, and "X" has the opposite corner as well, "O" must not play a corner in order to win. (Playing a corner in this scenario creates a fork for "X" to win.)
+    # Option 2: If there is a configuration where the opponent can fork, the player should block that fork.
     # Center: A player marks the center. (If it is the first move of the game, playing on a corner gives "O" more opportunities to make a mistake and may therefore be the better choice; however, it makes no difference between perfect players.)
     # Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
     # Empty corner: The player plays in a corner square.
@@ -72,7 +73,7 @@ class TicTacToe
     fork_cells = Set.new
     @board.map do |c|
       if !(c=="O" || c=="X")
-        test_set = @o.|(Set[c.to_i])
+        test_set = @x.|(Set[c.to_i])
         # check for opportunities (two in a row)
         opportunities = 0
         @winners.map do |w|
@@ -84,33 +85,34 @@ class TicTacToe
           end
         end
         if opportunities > 1
-          p "FORK DETECTED...."
           fork_cells << c.to_i
         end
       end
     end
-    
+
+    return nil if fork_cells.empty? # if there are no forks to block, move on
+
     candidate = force_away_from fork_cells
-    # if forcing using 2-in-a-row fails, try to take the fork cell
+
     if candidate
       return candidate
     else
-      take_fork(@x)
+      take_fork(@x) # if forcing using 2-in-a-row fails, try to take the fork cell
     end
   end
 
   def force_away_from( cells )
     # the goal is to create two-in-a-row so that your opponent has to move to a non-fork cell to prevent you from winning
     @board.map do |c|
-      if !(c=="O" || c=="X")
+      if !(c=="O" || c=="X") && !cells.include?(c.to_i) # don't block the fork directly (yet)
         test_set = @o.|(Set[c.to_i])
         @winners.map do |w|
           if test_set.&(w).size > 1 # two in a row
-            cell = w.-(test_set).first # the third
-            if @board.include?(cell.to_s) && !cells.include?(cell) # check if the third is on the board AND not one of the bad cells
+            third = w.-(test_set).first # the third
+            if @board.include?(third.to_s) && !cells.include?(third) # check if the third is on the board AND not one of the bad cells
               p "FORK AVOIDED"
-              pencil_in_o(cell)
-              return cell
+              pencil_in_o(third)
+              return third
             end
           end
         end
@@ -232,4 +234,4 @@ class TicTacToe
   end
 end
 
-TicTacToe.new()
+TicTacToe.new(true)
