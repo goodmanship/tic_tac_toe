@@ -48,6 +48,10 @@ class TicTacToe
     cell = two_in_a_row(@o)
     # block winning move
     cell ||= two_in_a_row(@x)
+    # create a fork
+    cell ||= take_fork(@o)
+    # block a fork
+    cell ||= take_fork(@x)
     # take the center
     cell ||= pencil_in_o(5) if @board.include? '5'
     # take opposite corner
@@ -63,9 +67,33 @@ class TicTacToe
     # pencil_in_o( a[m].to_i )
   end
 
-  def fork( team )
+  def take_fork( team )
     # this method will return the cell required to create a fork for team or nil
+    @board.map do |c|
+      if !(c=="O" || c=="X")
+        test_set = team.|(Set[c.to_i])
+        # check for opportunities (two in a row)
+        opportunities = 0
+        @winners.map do |w|
+          if test_set.&(w).size > 1 # two in a row
+            third = w.-(test_set).first # the third
+            if @board.include? third.to_s # check if the third is free
+              opportunities += 1
+            end
+          end
+        end
+        if opportunities > 1
+          p "FORK"
+          pencil_in_o(c.to_i)
+          return c.to_i
+        end
+      end
+    end
     nil
+  end
+  
+  def has_fork( test_set )
+    
   end
 
   def two_in_a_row( team )
@@ -94,7 +122,7 @@ class TicTacToe
     return nil
   end
 
-  def opposite_corner(c)
+  def opposite_corner( c )
     i = @corner_cells.index(c)
     opp_index = i + 2 > 3 ? i - 2 : i + 2
     @corner_cells[opp_index]
