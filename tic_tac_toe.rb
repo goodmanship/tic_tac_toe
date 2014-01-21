@@ -51,7 +51,7 @@ class TicTacToe
     # create a fork
     cell ||= take_fork(@o)
     # block a fork
-    cell ||= take_fork(@x)
+    cell ||= block_fork
     # take the center
     cell ||= pencil_in_o(5) if @board.include? '5'
     # take opposite corner
@@ -65,6 +65,58 @@ class TicTacToe
     # a = @board.select{ |t| t.to_i > 0 && t.to_i < 10 }
     # m = rand(a.length-1)
     # pencil_in_o( a[m].to_i )
+  end
+
+  def block_fork
+    # this method will return the cell required to create a fork for @o or nil
+    fork_cells = Set.new
+    @board.map do |c|
+      if !(c=="O" || c=="X")
+        test_set = @o.|(Set[c.to_i])
+        # check for opportunities (two in a row)
+        opportunities = 0
+        @winners.map do |w|
+          if test_set.&(w).size > 1 # two in a row
+            third = w.-(test_set).first # the third
+            if @board.include? third.to_s # check if the third is free
+              opportunities += 1
+            end
+          end
+        end
+        if opportunities > 1
+          p "FORK DETECTED...."
+          fork_cells << c.to_i
+        end
+      end
+    end
+    
+    candidate = force_away_from fork_cells
+    # if forcing using 2-in-a-row fails, try to take the fork cell
+    if candidate
+      return candidate
+    else
+      take_fork(@x)
+    end
+  end
+
+  def force_away_from( cells )
+    # the goal is to create two-in-a-row so that your opponent has to move to a non-fork cell to prevent you from winning
+    @board.map do |c|
+      if !(c=="O" || c=="X")
+        test_set = @o.|(Set[c.to_i])
+        @winners.map do |w|
+          if test_set.&(w).size > 1 # two in a row
+            cell = w.-(test_set).first # the third
+            if @board.include?(cell.to_s) && !cells.include?(cell) # check if the third is on the board AND not one of the bad cells
+              p "FORK AVOIDED"
+              pencil_in_o(cell)
+              return cell
+            end
+          end
+        end
+      end
+    end
+    nil
   end
 
   def take_fork( team )
